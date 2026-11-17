@@ -74,3 +74,45 @@
 body {
   font-family: var(--font-montserrat);
 }
+
+/* ============ Pure Bullion — user dashboard theme ============ */
+.pb-dashboard {
+  --background: 195 14% 6%;
+  --foreground: 150 10% 95%;
+  --card: 195 14% 3%;
+  --card-foreground: 150 10% 95%;
+  --popover: 195 14% 8%;
+  --popover-foreground: 150 10% 95%;
+  --primary: 45 78% 59%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 195 14% 12%;
+  --secondary-foreground: 150 10% 95%;
+  --muted: 195 14% 12%;
+  --muted-foreground: 160 6% 65%;
+  --accent: 195 14% 12%;
+  --accent-foreground: 150 10% 95%;
+  --border: 45 55% 38%;
+  --input: 195 10% 18%;
+  --ring: 45 78% 59%;
+}
+
+.gold-gradient-btn {
+  background: linear-gradient(135deg, #A48226 0%, #E7C042 38%, #FFF5CA 55%, #D5AB29 75%, #A78424 100%);
+  color: #000;
+  font-weight: 500;
+  transition: filter 0.2s ease, transform 0.1s ease;
+}
+.gold-gradient-btn:hover { filter: brightness(1.08); }
+.gold-gradient-btn:active { transform: scale(0.99); }
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #A48226 0%, #E7C042 38%, #FFF5CA 55%, #D5AB29 75%, #A78424 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.pb-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.pb-scroll::-webkit-scrollbar-thumb { background: #1f2a2e; border-radius: 9999px; }
+.pb-scroll::-webkit-scrollbar-track { background: transparent; }
