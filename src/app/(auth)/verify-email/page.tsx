@@ -1,11 +1,13 @@
-import React from 'react'
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import VerifyEmailForm from "@/components/auth/VerifyEmailForm";
 
-const page = () => {
+export const metadata: Metadata = { title: "Verify your email" };
+
+export default function VerifyEmailPage() {
   return (
-    <div>
-      page
-    </div>
-  )
+    <Suspense>
+      <VerifyEmailForm />
+    </Suspense>
+  );
 }
-
-export default page

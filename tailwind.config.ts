@@ -14,6 +14,7 @@ const config: Config = {
   		},
   		backgroundImage: {
   			'gold-gradient': 'linear-gradient(135deg, #A48226 0%, #E7C042 38%, #FFF5CA 55%, #D5AB29 75%, #A78424 100%)',
+  			'gold-gradient-btn': 'linear-gradient(158deg, #A48226 0%, #E7C042 31%, #FFF5CA 45%, #D5AB29 61%, #A78424 82%)',
   			'gold-gradient-soft': 'linear-gradient(135deg, rgba(164,130,38,0.15) 0%, rgba(231,192,66,0.15) 31%, rgba(255,245,202,0.15) 45%, rgba(213,171,41,0.15) 61%, rgba(167,132,36,0.15) 82%)',
   		},
   		colors: {
@@ -29,6 +30,11 @@ const config: Config = {
   				text: '#F1F4F3',
   				muted: '#A2ABA8',
   				up: '#20A978',
+  				bronze: '#C09248',
+  				'bronze-dark': '#A37B3C',
+  				body: '#BDBDBD',
+  				ink: '#111111',
+  				footer: '#1B1B1B',
   				down: '#EF4444',
   			},
   			background: 'hsl(var(--background))',
