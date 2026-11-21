@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { signIn, getSession } from "next-auth/react";
 import { toast } from "sonner";
 import GoldButton from "@/components/website/shared/GoldButton";
-import { DASHBOARD_URL, mockLogin } from "@/lib/mock-auth";
 import { isEmail } from "@/lib/validators";
 import AuthCheckbox from "./AuthCheckbox";
 import AuthField from "./AuthField";
@@ -14,11 +14,25 @@ import AuthShell from "./AuthShell";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get("error");
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (errorParam === "CredentialsSignin") {
+      toast.error("Invalid email or password");
+    } else if (errorParam === "SessionExpired") {
+      toast.error("Your session has expired. Please log in again.");
+    } else if (errorParam) {
+      toast.error(decodeURIComponent(errorParam));
+    }
+  }, [errorParam]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,12 +43,51 @@ export default function LoginForm() {
     if (Object.keys(next).length) return;
 
     setLoading(true);
-    const res = await mockLogin(email, password);
-    setLoading(false);
-    if (!res.ok) return toast.error(res.message ?? "Login failed");
-    toast.success("Welcome back!");
-    if (DASHBOARD_URL.startsWith("http")) window.location.href = DASHBOARD_URL;
-    else router.push(DASHBOARD_URL);
+    try {
+      const res = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setLoading(false);
+        return toast.error(res.error || "Invalid email or password");
+      }
+
+      // Sync access and refresh tokens to localStorage for axios / apiClient
+      try {
+        const session = await getSession();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sessionUser = session?.user as any;
+        const token = sessionUser?.accessToken;
+        const refreshToken = sessionUser?.refreshToken;
+        if (token) {
+          localStorage.setItem("accessToken", token);
+        }
+        if (refreshToken) {
+          localStorage.setItem("refreshToken", refreshToken);
+        }
+        if (sessionUser?.role) {
+          localStorage.setItem("userRole", sessionUser.role);
+        }
+      } catch {
+        // ignore storage fallback
+      }
+
+      toast.success("Welcome back!");
+      if (callbackUrl.startsWith("http")) {
+        window.location.href = callbackUrl;
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

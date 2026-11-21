@@ -141,6 +141,14 @@ html {
   color: transparent;
 }
 
+.gold-gradient-text-hero {
+  background: linear-gradient(90deg, #A48226 0%, #E7C042 38%, #FFF5CA 55%, #D5AB29 75%, #A78424 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 /* testimonial marquee */
 @keyframes pb-marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes pb-marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import GoldButton from "@/components/website/shared/GoldButton";
-import { mockRegister } from "@/lib/mock-auth";
+import { authService } from "@/services/auth.service";
+import { getErrorMessage } from "@/services/apiClient";
 import { isEmail, validatePassword } from "@/lib/validators";
 import AuthCheckbox from "./AuthCheckbox";
 import AuthField from "./AuthField";
@@ -37,11 +38,24 @@ export default function RegisterForm() {
     if (Object.keys(next).length) return;
 
     setLoading(true);
-    const res = await mockRegister(form);
-    setLoading(false);
-    if (!res.ok) return toast.error(res.message ?? "Sign up failed");
-    toast.success("Account created. Check your email for the code.");
-    router.push(`/verify-email?email=${encodeURIComponent(form.email)}&next=login`);
+    try {
+      const res = await authService.register({
+        name: form.fullName.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
+
+      toast.success(res.message || res.data?.message || "Account created successfully! Please log in.");
+      if (res.data?.nextStep === "VERIFY_EMAIL") {
+        router.push(`/verify-email?email=${encodeURIComponent(form.email.trim())}&next=login`);
+      } else {
+        router.push("/login");
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   const legal = "text-pb-bronze hover:underline";
@@ -72,7 +86,7 @@ export default function RegisterForm() {
         </div>
 
         <GoldButton type="submit" disabled={loading} className="w-full">
-          {loading ? "Creating account..." : "Sign in"}
+          {loading ? "Creating account..." : "Sign up"}
         </GoldButton>
 
         <AuthFooterLink text="Already have an account?" linkText="Log in" href="/login" />

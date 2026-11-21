@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import GoldButton from "@/components/website/shared/GoldButton";
-import { mockRequestResetCode, mockVerifyCode } from "@/lib/mock-auth";
+import { authService } from "@/services/auth.service";
+import { getErrorMessage } from "@/services/apiClient";
 import { cn } from "@/lib/utils";
 import AuthShell from "./AuthShell";
 
@@ -15,7 +16,7 @@ export default function VerifyEmailForm() {
   const router = useRouter();
   const params = useSearchParams();
   const email = params.get("email") ?? "you@gmail.com";
-  const next = params.get("next") === "reset-password" ? "/reset-password" : "/login";
+  const isResetFlow = params.get("next") === "reset-password";
 
   const [digits, setDigits] = useState<string[]>(Array(LENGTH).fill(""));
   const [loading, setLoading] = useState(false);
@@ -50,19 +51,48 @@ export default function VerifyEmailForm() {
 
   async function resend() {
     if (seconds > 0) return;
-    await mockRequestResetCode(email);
-    setSeconds(RESEND_SECONDS);
-    toast.success("A new code has been sent");
+    try {
+      if (isResetFlow) {
+        await authService.forgotPassword({ email });
+      } else {
+        await authService.resendVerification({ email });
+      }
+      setSeconds(RESEND_SECONDS);
+      toast.success("A new 6-digit code has been sent to your email");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const code = digits.join("");
+    if (code.length < LENGTH) {
+      return toast.error("Please enter the complete 6-digit code");
+    }
+
     setLoading(true);
-    const res = await mockVerifyCode(digits.join(""));
-    setLoading(false);
-    if (!res.ok) return toast.error(res.message ?? "Invalid code");
-    toast.success("Email verified");
-    router.push(next);
+    try {
+      if (isResetFlow) {
+        const res = await authService.verifyResetCode({ email, code });
+        const resetToken = res.data?.resetToken;
+        if (typeof window !== "undefined" && resetToken) {
+          sessionStorage.setItem("pb_reset_token", resetToken);
+        }
+        toast.success("Code verified! You can now set a new password.");
+        router.push(
+          `/reset-password?email=${encodeURIComponent(email)}${resetToken ? `&token=${encodeURIComponent(resetToken)}` : ""}`
+        );
+      } else {
+        await authService.verifyEmail({ email, code });
+        toast.success("Email verified successfully! Please log in.");
+        router.push("/login");
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

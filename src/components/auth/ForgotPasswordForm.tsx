@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import GoldButton from "@/components/website/shared/GoldButton";
-import { mockRequestResetCode } from "@/lib/mock-auth";
+import { authService } from "@/services/auth.service";
+import { getErrorMessage } from "@/services/apiClient";
 import { isEmail } from "@/lib/validators";
 import AuthField from "./AuthField";
 import AuthShell from "./AuthShell";
@@ -20,11 +21,16 @@ export default function ForgotPasswordForm() {
     if (!isEmail(email)) return setError("Enter a valid email address");
     setError(undefined);
     setLoading(true);
-    const res = await mockRequestResetCode(email);
-    setLoading(false);
-    if (!res.ok) return toast.error(res.message ?? "Could not send code");
-    toast.success("Verification code sent");
-    router.push(`/verify-email?email=${encodeURIComponent(email)}&next=reset-password`);
+
+    try {
+      await authService.forgotPassword({ email: email.trim() });
+      toast.success("Verification code sent to your email.");
+      router.push(`/verify-email?email=${encodeURIComponent(email.trim())}&next=reset-password`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

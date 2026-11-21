@@ -1,16 +1,21 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import GoldButton from "@/components/website/shared/GoldButton";
-import { mockResetPassword } from "@/lib/mock-auth";
+import { authService } from "@/services/auth.service";
+import { getErrorMessage } from "@/services/apiClient";
 import { validatePassword } from "@/lib/validators";
 import AuthField from "./AuthField";
 import AuthShell from "./AuthShell";
 
 export default function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get("email");
+  const tokenParam = searchParams.get("token");
+
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
@@ -25,12 +30,29 @@ export default function ResetPasswordForm() {
     setErrors(next);
     if (Object.keys(next).length) return;
 
+    const resetToken =
+      tokenParam ||
+      (typeof window !== "undefined" ? sessionStorage.getItem("pb_reset_token") : null) ||
+      undefined;
+
     setLoading(true);
-    const res = await mockResetPassword(password);
-    setLoading(false);
-    if (!res.ok) return toast.error(res.message ?? "Could not reset password");
-    toast.success("Password updated. Please log in.");
-    router.push("/login");
+    try {
+      await authService.resetPassword({
+        resetToken,
+        email: emailParam || undefined,
+        newPassword: password,
+      });
+
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("pb_reset_token");
+      }
+      toast.success("Password updated. Please log in.");
+      router.push("/login");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
