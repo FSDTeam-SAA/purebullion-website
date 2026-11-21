@@ -154,7 +154,7 @@ export const authService = {
   ): Promise<ApiResponse<{ message: string }>> {
     const response = await apiClient.post<ApiResponse<{ message: string }>>(
       '/auth/change-password',
-      payload
+      { oldPassword: payload.currentPassword, newPassword: payload.newPassword }
     );
     return response.data;
   },

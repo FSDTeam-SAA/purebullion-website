@@ -15,7 +15,7 @@ const initial: Message[] = [
 export function ChatPanel({ resetKey }: { resetKey: number }) {
   const [messages, setMessages] = useState<Message[]>(initial);
   const [value, setValue] = useState("");
-  const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -23,7 +23,8 @@ export function ChatPanel({ resetKey }: { resetKey: number }) {
   }, [resetKey]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -41,7 +42,7 @@ export function ChatPanel({ resetKey }: { resetKey: number }) {
   }
 
   return (
-    <section className="flex min-h-[640px] min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-pb-head backdrop-blur-[10px]">
+    <section className="flex min-h-[640px] min-w-0 flex-1 flex-col overflow-hidden lg:min-h-0 rounded-lg bg-pb-head backdrop-blur-[10px]">
       <header className="flex items-center justify-between gap-4 border-b-2 border-pb-text p-4">
         <div className="flex items-start gap-2">
           <Image src="/icons/ai-assistant/news.svg" alt="" width={24} height={24} />
@@ -61,11 +62,10 @@ export function ChatPanel({ resetKey }: { resetKey: number }) {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col p-4">
-        <div className="pb-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto border-b border-pb-muted pb-2">
+        <div ref={scrollRef} className="pb-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto border-b border-pb-muted pb-2">
           {messages.map((m) => (
             <MessageView key={m.id} m={m} />
           ))}
-          <div ref={endRef} />
         </div>
         <div className="flex flex-col gap-4 py-4">
           <div className="flex flex-wrap items-center gap-4">

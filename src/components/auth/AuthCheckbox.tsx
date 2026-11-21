@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AuthCheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
@@ -7,14 +8,20 @@ interface AuthCheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 export default function AuthCheckbox({ children, className, ...props }: AuthCheckboxProps) {
   return (
     <label className="flex cursor-pointer items-start gap-3 text-sm text-white">
-      <input
-        type="checkbox"
-        className={cn(
-          "mt-[1px] size-4 shrink-0 cursor-pointer appearance-none rounded border border-white bg-transparent checked:border-pb-gold checked:bg-pb-gold checked:bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M3.5 8.5l3 3 6-6.5'/%3E%3C/svg%3E\")]",
-          className,
-        )}
-        {...props}
-      />
+      <span className="relative mt-[1px] flex size-4 shrink-0">
+        <input
+          type="checkbox"
+          className={cn(
+            "peer size-4 cursor-pointer appearance-none rounded border border-white bg-transparent transition-colors checked:border-pb-gold checked:bg-pb-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-pb-gold",
+            className,
+          )}
+          {...props}
+        />
+        <Check
+          strokeWidth={3}
+          className="pointer-events-none absolute inset-0 m-auto size-3 text-black opacity-0 peer-checked:opacity-100"
+        />
+      </span>
       <span className="leading-normal">{children}</span>
     </label>
   );

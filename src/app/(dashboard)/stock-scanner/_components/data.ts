@@ -33,68 +33,54 @@ export const EXIT_GROUP: FilterGroup = {
 
 export const RISK_REWARD_OPTIONS = ["1 : 1.50", "1 : 1.80", "2 : 1.00", "1 : 2.50"];
 
-export const SUMMARY = [
-  { label: "Securities scanned", value: "6,021.13" },
-  { label: "Matches", value: "9" },
-  { label: "New since open", value: "2" },
-  { label: "Last run", value: "16:00:04 ET" },
-];
-
 export const SORT_OPTIONS = ["Momentum", "Liquidity", "Change", "Price"];
 
-export type Momentum = "Strong" | "Neutral" | "Weak";
-export type SignalSetup = "Buy setup" | "Open Signal" | "Watch" | "Hold";
 
-export type ScanRow = {
-  id: string;
-  company: string;
-  ticker: string;
-  price: string;
-  change: string;
-  momentum: Momentum;
-  liquidity: string;
-  risk: string;
-  setup: string;
-  signal: SignalSetup;
+/** group key -> API query key */
+export const API_KEY: Record<string, string> = {
+  market: "marketCondition",
+  price: "priceBehavior",
+  liquidity: "liquidity",
+  momentum: "momentum",
+  technical: "technicalCondition",
+  entry: "entryCondition",
+  exit: "exitCondition",
 };
 
-const r = (
-  id: string,
-  company: string,
-  ticker: string,
-  price: string,
-  change: string,
-  momentum: Momentum,
-  risk: string,
-  setup: string,
-  signal: SignalSetup
-): ScanRow => ({ id, company, ticker, price, change, momentum, liquidity: "High", risk, setup, signal });
+export const ALL_GROUPS: FilterGroup[] = [...FILTER_GROUPS, ENTRY_GROUP, EXIT_GROUP];
 
-const BO = "Breakout continuation";
-const PB = "Pull back to 30-DMA";
-const RC = "Range compression";
+export type FilterState = { sel: Record<string, string[]>; stop: number; rr: string };
 
-export const SCAN_ROWS: ScanRow[] = [
-  r("PB-2481", "NVIDIA Corp", "NVDA", "$180.80", "+2.80%", "Strong", "Moderate", BO, "Buy setup"),
-  r("PB-2480", "Microsoft Corp", "MSFT", "$509.40", "+2.80%", "Strong", "Moderate", BO, "Buy setup"),
-  r("PB-2479", "Broadcom Inc", "AVGO", "$180.80", "+2.80%", "Strong", "High", BO, "Buy setup"),
-  r("PB-2479", "Broadcom Inc", "AVGO", "$180.80", "+2.80%", "Strong", "High", BO, "Buy setup"),
-  r("PB-2479", "Broadcom Inc", "AVGO", "$180.80", "+2.80%", "Strong", "High", BO, "Buy setup"),
-  r("PB-2479", "Broadcom Inc", "AVGO", "$180.80", "+4.10%", "Strong", "High", PB, "Open Signal"),
-  r("PB-2479", "Broadcom Inc", "AVGO", "$180.80", "+4.10%", "Strong", "High", PB, "Open Signal"),
-  r("PB-2479", "Broadcom Inc", "AVGO", "$180.80", "+4.10%", "Strong", "High", PB, "Open Signal"),
-  r("PB-2478", "JPMorgan Chase", "JPM", "$180.80", "+4.10%", "Strong", "High", PB, "Open Signal"),
-  r("PB-2478", "JPMorgan Chase", "JPM", "$180.80", "+4.10%", "Strong", "High", PB, "Open Signal"),
-  r("PB-2478", "JPMorgan Chase", "JPM", "$180.80", "+4.10%", "Strong", "High", PB, "Open Signal"),
-  r("PB-2478", "JPMorgan Chase", "JPM", "$180.80", "+4.10%", "Strong", "Medium", RC, "Open Signal"),
-  r("PB-2477", "Meta Platforms", "META", "$180.80", "+2.00%", "Neutral", "Medium", "Uptrend", "Watch"),
-  r("PB-2477", "Meta Platforms", "META", "$180.80", "+2.00%", "Neutral", "Medium", "Uptrend", "Watch"),
-  r("PB-2477", "Meta Platforms", "META", "$180.80", "+2.00%", "Neutral", "Medium", "Uptrend", "Watch"),
-  r("PB-2477", "Meta Platforms", "META", "$180.80", "+2.00%", "Neutral", "Medium", "Trend continuation", "Watch"),
-  r("PB-2477", "Meta Platforms", "META", "$180.80", "+2.00%", "Neutral", "Medium", "Trend continuation", "Watch"),
-  r("PB-2477", "Meta Platforms", "META", "$180.80", "+2.00%", "Neutral", "Medium", "Trend continuation", "Watch"),
-  r("PB-2473", "Caterpillar Inc", "CAT", "$180.80", "+2.00%", "Neutral", "Low", RC, "Hold"),
-  r("PB-2473", "Caterpillar Inc", "CAT", "$180.80", "+3.20%", "Weak", "Low", "Base breakout", "Hold"),
-  r("PB-2473", "Caterpillar Inc", "CAT", "$180.80", "+3.20%", "Weak", "Low", "Base breakout", "Hold"),
-  r("PB-2473", "Caterpillar Inc", "CAT", "$180.80", "+3.20%", "Weak", "Low", "Base breakout", "Hold"),
-];
+export const defaultFilterState = (): FilterState => ({
+  sel: Object.fromEntries(ALL_GROUPS.map((g) => [g.key, [...g.selected]])),
+  stop: 6,
+  rr: "1 : 1.80",
+});
+
+/** Multi-select chips -> comma-separated API values (omitted = Any). */
+export function toApiFilters(f: FilterState) {
+  const out: Record<string, string | number> = {};
+  for (const g of ALL_GROUPS) {
+    const v = f.sel[g.key] ?? [];
+    if (v.length) out[API_KEY[g.key]] = v.join(",");
+  }
+  out.maxStopDistance = f.stop;
+  out.minRiskReward = f.rr;
+  return out;
+}
+
+/** Saved preset filters -> chip state. */
+export function fromApiFilters(filters: Record<string, unknown>): FilterState {
+  const base = defaultFilterState();
+  const sel: Record<string, string[]> = {};
+  for (const g of ALL_GROUPS) {
+    const raw = filters[API_KEY[g.key]];
+    sel[g.key] =
+      typeof raw === "string" && raw && raw !== "Any" ? raw.split(",").map((x) => x.trim()).filter(Boolean) : [];
+  }
+  return {
+    sel,
+    stop: typeof filters.maxStopDistance === "number" ? filters.maxStopDistance : base.stop,
+    rr: typeof filters.minRiskReward === "string" ? filters.minRiskReward : base.rr,
+  };
+}

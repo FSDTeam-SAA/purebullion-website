@@ -1,6 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useAddComment,
+  useCommunityFeed,
+  useCreatePost,
+  useDeletePost,
+  useReportContent,
+  useToggleLike,
+} from "@/hooks/useCommunity";
+import type { CommunityPostDto } from "@/services/community.service";
 import { CommentModal } from "./modals/CommentModal";
 import { NewPostModal } from "./modals/NewPostModal";
 import { ReportModal } from "./modals/ReportModal";
@@ -8,40 +18,29 @@ import { Feed } from "./Feed";
 import { FiltersPanel } from "./FiltersPanel";
 import { SidePanels } from "./SidePanels";
 import { StatTiles } from "./StatTiles";
-import { INITIAL_POSTS, type Post, type SortKey, type Topic } from "./data";
+import { SORT_PARAM, topicParam, type SortKey, type Topic } from "./data";
 
 export function CommunityView() {
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
-  const [liked, setLiked] = useState<Set<string>>(new Set());
+  const qc = useQueryClient();
   // draft (chips) vs applied (feed) filter state
   const [topic, setTopic] = useState<Topic>("All discussions");
   const [sort, setSort] = useState<SortKey>("Trending");
   const [applied, setApplied] = useState<{ topic: Topic; sort: SortKey }>({ topic: "All discussions", sort: "Trending" });
-  const [refreshing, setRefreshing] = useState(false);
 
   const [newOpen, setNewOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState<Post | null>(null);
-  const [commentTarget, setCommentTarget] = useState<Post | null>(null);
+  const [reportTarget, setReportTarget] = useState<CommunityPostDto | null>(null);
+  const [commentTarget, setCommentTarget] = useState<CommunityPostDto | null>(null);
 
-  const visible = useMemo(() => {
-    const list = posts.filter((p) => applied.topic === "All discussions" || p.category === applied.topic);
-    const score = (p: Post) => p.likes + p.comments + (liked.has(p.id) ? 1 : 0);
-    return [...list].sort((a, b) =>
-      applied.sort === "Newest" ? a.minutesAgo - b.minutesAgo : applied.sort === "Most replies" ? b.comments - a.comments : score(b) - score(a)
-    );
-  }, [posts, applied, liked]);
+  const feed = useCommunityFeed({ topic: topicParam(applied.topic), sort: SORT_PARAM[applied.sort] });
+  const posts = useMemo(() => feed.data?.pages.flatMap((p) => p.posts) ?? [], [feed.data]);
 
-  const toggleLike = (id: string) =>
-    setLiked((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
+  const like = useToggleLike();
+  const createPost = useCreatePost();
+  const deletePost = useDeletePost();
+  const addComment = useAddComment();
+  const report = useReportContent();
 
-  const refresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
-  };
+  const refresh = () => qc.invalidateQueries({ queryKey: ["community"] });
 
   return (
     <div className="flex flex-col gap-6 pb-6 pt-6">
@@ -67,14 +66,21 @@ export function CommunityView() {
               }}
             />
             <Feed
-              posts={visible}
-              liked={liked}
-              refreshing={refreshing}
+              posts={posts}
+              loading={feed.isLoading}
+              error={feed.isError}
+              refreshing={feed.isRefetching && !feed.isFetchingNextPage}
+              hasMore={feed.hasNextPage}
+              loadingMore={feed.isFetchingNextPage}
+              onLoadMore={() => feed.fetchNextPage()}
               onAdd={() => setNewOpen(true)}
               onRefresh={refresh}
-              onLike={toggleLike}
+              onLike={(id) => like.mutate(id)}
               onComment={setCommentTarget}
               onReport={setReportTarget}
+              onDelete={(p) => {
+                if (window.confirm("Delete this post? This cannot be undone.")) deletePost.mutate(p._id);
+              }}
             />
           </div>
         </div>
@@ -84,18 +90,23 @@ export function CommunityView() {
       <NewPostModal
         open={newOpen}
         onOpenChange={setNewOpen}
-        onPublish={({ title, body, category, image }) =>
-          setPosts((p) => [
-            { id: `new-${Date.now()}`, author: "Jordan R.", topicLabel: category, category, timeLabel: "Just now", minutesAgo: 0, title, body, image, comments: 0, likes: 0 },
-            ...p,
-          ])
+        publishing={createPost.isPending}
+        onPublish={({ title, body, category, file }) =>
+          createPost.mutate({ title, content: body, topic: category, files: file ? [file] : undefined })
         }
       />
-      <ReportModal open={!!reportTarget} onOpenChange={(o) => !o && setReportTarget(null)} onSubmit={() => undefined} />
+      <ReportModal
+        open={!!reportTarget}
+        onOpenChange={(o) => !o && setReportTarget(null)}
+        onSubmit={(reasons, details) =>
+          reportTarget &&
+          report.mutate({ targetType: "post", targetId: reportTarget._id, reasons, description: details.trim() || undefined })
+        }
+      />
       <CommentModal
         open={!!commentTarget}
         onOpenChange={(o) => !o && setCommentTarget(null)}
-        onSave={() => commentTarget && setPosts((p) => p.map((x) => (x.id === commentTarget.id ? { ...x, comments: x.comments + 1 } : x)))}
+        onSave={(content) => commentTarget && addComment.mutate({ postId: commentTarget._id, content })}
       />
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { Menu, User } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,6 +8,8 @@ import { useSession } from "next-auth/react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NAV_LINKS } from "@/data/website/navigation";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/app/(dashboard)/_components/shared/UserAvatar";
+import { useCurrentUser } from "@/hooks/useProfile";
 import GoldButton from "../shared/GoldButton";
 import BrandLogo from "./BrandLogo";
 
@@ -36,13 +37,15 @@ export default function Navbar() {
       Boolean(user) ||
       (typeof window !== "undefined" && Boolean(localStorage.getItem("accessToken"))));
 
+  // Fresh profile from the API (the session copy can be stale); fall back to the session values.
+  const { data: me } = useCurrentUser(isLoggedIn);
+  const displayName = me?.name || user?.name;
   const avatarSrc =
-    (user?.image && user.image.trim()) ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ((user as any)?.profileImage && (user as any).profileImage.trim()) ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ((user as any)?.avatarUrl && (user as any).avatarUrl.trim()) ||
-    "/images/dashboard/avatar.png";
+    me?.profileImage?.trim() ||
+    user?.image?.trim() ||
+    user?.profileImage?.trim() ||
+    user?.avatarUrl?.trim() ||
+    null;
 
   return (
     <header
@@ -88,22 +91,7 @@ export default function Navbar() {
               aria-label="Go to Dashboard"
               className="group relative flex size-11 items-center justify-center rounded-full border border-pb-gold-dark bg-gold-gradient p-[2px] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(231,192,66,0.4)]"
             >
-              <div className="relative size-full overflow-hidden rounded-full bg-[#141414]">
-                {avatarSrc ? (
-                  <Image
-                    src={avatarSrc}
-                    alt={user?.name || "Profile"}
-                    width={40}
-                    height={40}
-                    unoptimized
-                    className="size-full rounded-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center text-pb-gold">
-                    <User className="size-5" />
-                  </div>
-                )}
-              </div>
+              <UserAvatar name={displayName} src={avatarSrc} className="transition-transform duration-300 group-hover:scale-105" />
             </Link>
           ) : (
             <GoldButton href="/login" size="sm" className="py-3">

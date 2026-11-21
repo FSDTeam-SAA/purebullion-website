@@ -1,16 +1,19 @@
 import Image from "next/image";
 import { CardHeader } from "./CardHeader";
-import { NEWS } from "./data";
+import type { ScannerDetail } from "@/services/stockScanner.service";
+import { timeAgo } from "@/lib/format";
 
-export function RelatedNews() {
+export function RelatedNews({ d }: { d: ScannerDetail }) {
+  const NEWS = d.relatedNews ?? [];
   return (
     <section className="overflow-hidden rounded-[8px] bg-[#121719]">
       <CardHeader title="Related news" action={{ label: "View all →", href: "/news-research" }} />
       <ul className="flex flex-col gap-4 p-4">
+        {NEWS.length === 0 && <li className="text-[14px] text-pb-muted">No recent news.</li>}
         {NEWS.map((n) => (
-          <li key={n.title} className="flex items-stretch gap-4">
+          <li key={n.id} className="flex items-stretch gap-4">
             <div className="relative w-[75px] shrink-0 self-stretch overflow-hidden rounded-[8px] bg-[#d9d9d9]">
-              <Image src={n.image} alt="" fill sizes="75px" className="object-cover" />
+              {n.imageUrl && <Image src={n.imageUrl} alt="" fill sizes="75px" className="object-cover" unoptimized />}
               <div className="invisible h-[75px]" />
             </div>
             <div className="flex flex-1 flex-col justify-center gap-4">
@@ -18,7 +21,7 @@ export function RelatedNews() {
               <p className="flex items-center gap-2 text-[14px] font-medium leading-[1.5] text-pb-muted">
                 {n.source}
                 <span aria-hidden>•</span>
-                {n.time}
+                {timeAgo(n.publishedAt)}
               </p>
             </div>
           </li>

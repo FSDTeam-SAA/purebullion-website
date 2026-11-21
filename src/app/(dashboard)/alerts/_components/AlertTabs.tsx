@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { tabs, type TabKey } from "./data";
 
-type Props = { active: TabKey; onChange: (k: TabKey) => void; onMarkAllRead: () => void; onOpenSettings: () => void };
+type Props = { counts?: Partial<Record<TabKey, number>>; active: TabKey; onChange: (k: TabKey) => void; onMarkAllRead: () => void; onOpenSettings: () => void };
 
-export function AlertTabs({ active, onChange, onMarkAllRead, onOpenSettings }: Props) {
+export function AlertTabs({ counts, active, onChange, onMarkAllRead, onOpenSettings }: Props) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-t-[10px] border-b border-pb-sidebar px-6 py-4">
       <div className="flex flex-wrap items-center gap-[18px]">
@@ -21,7 +21,7 @@ export function AlertTabs({ active, onChange, onMarkAllRead, onOpenSettings }: P
               className={cn("flex h-8 items-center gap-2 border-b-2 border-transparent p-2 text-[14px] font-bold", on ? "border-pb-gold-dark" : "text-pb-muted")}
             >
               <span className={cn(on && "gold-gradient-text")}>{t.label}</span>
-              <span className="rounded-full bg-pb-sidebar px-[6px] py-[2px] text-[10px] font-bold text-pb-muted">{t.count}</span>
+              <span className="rounded-full bg-pb-sidebar px-[6px] py-[2px] text-[10px] font-bold text-pb-muted">{counts?.[t.key] ?? 0}</span>
             </button>
           );
         })}

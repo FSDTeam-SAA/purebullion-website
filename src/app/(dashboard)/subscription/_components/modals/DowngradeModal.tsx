@@ -6,29 +6,45 @@ import { FormModal } from "../../../_components/shared/FormModal";
 import { btn, btnLight } from "../btn";
 import { downgradeLosses } from "../data";
 
-type Props = { open: boolean; onOpenChange: (o: boolean) => void };
+import { useMySubscription, useSubscribe } from "@/hooks/useSubscription";
+import { activeSub } from "../plan-utils";
+import type { ModalTarget } from "../SubscriptionModals";
 
-export function DowngradeModal({ open, onOpenChange }: Props) {
+type Props = { open: boolean; onOpenChange: (o: boolean) => void; target?: ModalTarget };
+
+export function DowngradeModal({ open, onOpenChange, target }: Props) {
+  const subscribe = useSubscribe();
+  const sub = activeSub(useMySubscription().data);
+  const plan = target?.plan;
+  const cycle = target?.cycle ?? sub?.billingCycle ?? "monthly";
+  const currentName = sub?.plan.name ?? "your current plan";
   return (
     <FormModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Downgrade to Essential?"
+      title={`Downgrade to ${plan?.name ?? "a lower plan"}?`}
       iconSrc="/icons/subscription/cancel-flag.svg"
       iconSize={[17, 15]}
       footer={
         <>
           <Button variant="light" className={btnLight} onClick={() => onOpenChange(false)}>
-            Keep Professional
+            Keep {sub?.plan.name ?? "Plan"}
           </Button>
-          <Button variant="gold" className={btn} onClick={() => onOpenChange(false)}>
-            Downgrade at renewal
+          <Button
+            variant="gold"
+            className={btn}
+            disabled={!plan || subscribe.isPending}
+            onClick={() =>
+              plan && subscribe.mutate({ planId: plan._id, billingCycle: cycle }, { onSuccess: () => onOpenChange(false) })
+            }
+          >
+            {subscribe.isPending ? "Processing..." : "Confirm downgrade"}
           </Button>
         </>
       }
     >
       <p className="text-[12px] font-bold leading-[1.2] text-[#8a9499]">
-        Your Professional access continues until Oct 19, 2026. From that date you would lose:
+        Your plan changes from {currentName} to {plan?.name ?? "the lower plan"} immediately. You would lose:
       </p>
       <ul className="flex flex-col gap-4">
         {downgradeLosses.map((item) => (

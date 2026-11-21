@@ -1,13 +1,15 @@
 import { SideTag } from "../../../_components/shared";
 import { CardHeader } from "./CardHeader";
-import { HISTORY } from "./data";
+import type { ScannerDetail } from "@/services/stockScanner.service";
+import { fmtPct, fmtPrice } from "@/lib/format";
 
 const COLS = ["ID", "Signal", "Entry", "Last / exit", "Return", "Outcome", "Closed"];
 
-export function SignalHistoryTable({ ticker }: { ticker: string }) {
+export function SignalHistoryTable({ ticker, d }: { ticker: string; d: ScannerDetail }) {
+  const HISTORY = d.signalHistory ?? [];
   return (
     <section className="overflow-hidden rounded-[8px] border border-[#171d1f] bg-[#121719]">
-      <CardHeader title={`Signal history for ${ticker}`} action={{ label: "151 total" }} />
+      <CardHeader title={`Signal history for ${ticker}`} action={{ label: `${HISTORY.length} total` }} />
       <div className="overflow-x-auto pb-scroll">
         <table className="w-full min-w-[640px] table-fixed border-collapse text-[14px] text-pb-text">
           <thead>
@@ -24,13 +26,13 @@ export function SignalHistoryTable({ ticker }: { ticker: string }) {
               <tr key={r.id} className={`h-12 ${i % 2 === 1 ? "bg-[#0d1112]" : ""}`}>
                 <td className="px-4 text-left">{r.id}</td>
                 <td className="px-4 text-center">
-                  <SideTag side={r.side} className="rounded-[4px] px-2 py-1" />
+                  <SideTag side={r.signal} className="rounded-[4px] px-2 py-1" />
                 </td>
-                <td className="px-4 text-center">{r.entry}</td>
-                <td className="px-4 text-center">{r.last}</td>
-                <td className="px-4 text-center">{r.ret}</td>
+                <td className="px-4 text-center">{fmtPrice(r.entry)}</td>
+                <td className="px-4 text-center">{fmtPrice(r.lastExit)}</td>
+                <td className="px-4 text-center">{fmtPct(r.returnPct)}</td>
                 <td className="px-4 text-center">{r.outcome}</td>
-                <td className="px-4 text-center">{r.closed}</td>
+                <td className="px-4 text-center">{r.closedDate}</td>
               </tr>
             ))}
           </tbody>
