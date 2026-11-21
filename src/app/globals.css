@@ -67,12 +67,12 @@
 }
 
 
-:root {
-  --font-montserrat: "Montserrat", sans-serif;
+body {
+  font-family: var(--font-raleway), "Raleway", sans-serif;
 }
 
-body {
-  font-family: var(--font-montserrat);
+html {
+  scroll-behavior: smooth;
 }
 
 /* ============ Pure Bullion — user dashboard theme ============ */
@@ -116,3 +116,34 @@ body {
 .pb-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .pb-scroll::-webkit-scrollbar-thumb { background: #1f2a2e; border-radius: 9999px; }
 .pb-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ============ Pure Bullion — public website ============ */
+.pb-website {
+  background-color: #111111;
+  color: #ffffff;
+}
+
+/* vertical "pillar" texture used behind hero sections */
+.pb-pillars {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0.55) 40px,
+    rgba(0, 0, 0, 0) 80px
+  );
+}
+
+.gold-gradient-text-lg {
+  background: linear-gradient(128deg, #A48226 0%, #E7C042 31%, #FFF5CA 45%, #D5AB29 61%, #A78424 82%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* testimonial marquee */
+@keyframes pb-marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes pb-marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+.pb-marquee-track { display: flex; width: max-content; gap: 24px; padding-right: 24px; }
+.pb-marquee:hover .pb-marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .pb-marquee-track { animation: none !important; } }

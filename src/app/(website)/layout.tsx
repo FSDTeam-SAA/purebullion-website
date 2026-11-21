@@ -1,15 +1,12 @@
-import React from "react";
+import Footer from "@/components/website/layout/Footer";
+import Navbar from "@/components/website/layout/Navbar";
 
-function layout({ children }: { children: React.ReactNode }) {
+export default function WebsiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <div>
-      
-        <div className="">{children}</div>
-       
-      </div>
-    </>
+    <div className="pb-website relative min-h-screen overflow-x-clip">
+      <Navbar />
+      <main className="flex flex-col gap-20 pb-20 lg:gap-[120px] lg:pb-[120px]">{children}</main>
+      <Footer />
+    </div>
   );
 }
-
-export default layout;
