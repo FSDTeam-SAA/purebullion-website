@@ -4,11 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormModal } from "../../../_components/shared/FormModal";
 import { btn, btnLight } from "../btn";
+import { useCancelSubscription, useMySubscription } from "@/hooks/useSubscription";
+import { activeSub } from "../plan-utils";
 import { cancelReasons } from "../data";
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void };
 
 export function CancelSubscriptionModal({ open, onOpenChange }: Props) {
+  const cancel = useCancelSubscription();
+  const sub = activeSub(useMySubscription().data);
+  const planName = sub?.plan.name ?? "current";
   return (
     <FormModal
       open={open}
@@ -21,16 +26,21 @@ export function CancelSubscriptionModal({ open, onOpenChange }: Props) {
           <Button variant="gold" className={btn} onClick={() => onOpenChange(false)}>
             Keep My Plan
           </Button>
-          <Button variant="light" className={btnLight} onClick={() => onOpenChange(false)}>
-            Cancel Subscription
+          <Button
+            variant="light"
+            className={btnLight}
+            disabled={cancel.isPending || !sub}
+            onClick={() => cancel.mutate(undefined, { onSuccess: () => onOpenChange(false) })}
+          >
+            {cancel.isPending ? "Cancelling..." : "Cancel Subscription"}
           </Button>
         </>
       }
     >
       <div className="text-[12px] font-bold leading-[1.2] text-[#8a9499]">
         <p>
-          Your Professional plan stays active until October 19, 2026. After that you lose signals, the scanner and alerts. Watchlists and
-          community history are kept for 90 days.
+          Cancelling ends your {planName} plan. You lose signals, the scanner and alerts. Watchlists and community history are kept for 90
+          days.
         </p>
         <p className="mt-3">
           Your founding rate is released when the subscription ends and cannot be reclaimed once the 1,000 spots are filled.

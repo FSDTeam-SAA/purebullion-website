@@ -24,6 +24,18 @@ export default function LoginForm() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
 
+  // Pre-fill the email (and tick the box) for users who chose "Remember me" last time.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("pb_remember") === "1") {
+        setRemember(true);
+        setEmail(localStorage.getItem("pb_remember_email") ?? "");
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
   useEffect(() => {
     if (errorParam === "CredentialsSignin") {
       toast.error("Invalid email or password");
@@ -55,7 +67,7 @@ export default function LoginForm() {
         return toast.error(res.error || "Invalid email or password");
       }
 
-      // Sync access and refresh tokens to localStorage for axios / apiClient
+      // Sync access and refresh tokens to localStorage for apiClient
       try {
         const session = await getSession();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,6 +85,17 @@ export default function LoginForm() {
         }
       } catch {
         // ignore storage fallback
+      }
+
+      // "Remember me": keep the login across browser restarts. Otherwise RememberGuard
+      // ends the session once the browser/tab session is closed.
+      try {
+        localStorage.setItem("pb_remember", remember ? "1" : "0");
+        if (remember) localStorage.setItem("pb_remember_email", email.trim());
+        else localStorage.removeItem("pb_remember_email");
+        sessionStorage.setItem("pb_session_active", "1");
+      } catch {
+        /* storage unavailable */
       }
 
       toast.success("Welcome back!");

@@ -10,7 +10,7 @@ export function AiAssistantView() {
   const [resetKey, setResetKey] = useState(0);
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:min-h-[1080px] lg:flex-row lg:items-stretch">
+    <div className="flex flex-col gap-6 p-6 lg:h-full lg:min-h-0 lg:flex-row lg:items-stretch">
       <ChatSidebar
         activeId={activeId}
         onSelect={setActiveId}

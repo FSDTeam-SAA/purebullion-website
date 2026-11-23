@@ -1,24 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { buildSeries, indexMeta, indexTabs, rangeTabs, type IndexName, type RangeName } from "./data";
+import { PanelEmpty, PanelError, PanelLoading } from "../../_components/shared/QueryState";
+import { fmtNumber, fmtPct } from "@/lib/format";
+import { useChart, useIndices } from "@/hooks/useMarketData";
+import { indexSymbol, indexTabs, rangeConfig, rangeTabs, type IndexName, type RangeName } from "./data";
+
+function tickLabel(datetime: string, range: RangeName) {
+  const d = new Date(datetime.replace(" ", "T"));
+  if (isNaN(d.getTime())) return datetime;
+  if (range === "1D") return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (range === "1W" || range === "1M" || range === "3M") return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
 
 export function MarketChartCard() {
   const [index, setIndex] = useState<IndexName>("S&P 500");
   const [range, setRange] = useState<RangeName>("1D");
   const [full, setFull] = useState(false);
-  const meta = indexMeta[index];
-  const data = buildSeries(index, range);
-  const down = meta.change.startsWith("-");
+  const symbol = indexSymbol[index];
+  const { interval, outputsize } = rangeConfig[range];
+  const indices = useIndices();
+  const chart = useChart(symbol, interval, outputsize);
+  const quote = indices.data?.find((i) => i.symbol === symbol);
+  const prevClose = quote?.previousClose ?? 0;
+  const down = (quote?.percentChange ?? 0) < 0;
   const color = down ? "#EF4444" : "#20A978";
+  const data = useMemo(
+    () =>
+      [...(chart.data?.candles ?? [])]
+        .sort((a, b) => a.datetime.localeCompare(b.datetime))
+        .map((c, i) => ({ i, datetime: c.datetime, label: tickLabel(c.datetime, range), value: c.close })),
+    [chart.data, range]
+  );
   const values = data.map((d) => d.value);
-  const lo = Math.min(...values, meta.prevClose);
-  const hi = Math.max(...values, meta.prevClose);
+  const lo = values.length ? Math.min(...values, ...(prevClose ? [prevClose] : [])) : 0;
+  const hi = values.length ? Math.max(...values, ...(prevClose ? [prevClose] : [])) : 1;
   const pad = (hi - lo) * 0.15;
-  const ticks = Array.from(new Set(data.map((d) => d.label)));
+  const tickCount = Math.min(7, data.length);
+  const ticks = Array.from({ length: tickCount }, (_, k) => data[Math.round((k * (data.length - 1)) / Math.max(1, tickCount - 1))]?.datetime);
   const fmt = (v: number) => (v >= 1000 ? v.toLocaleString("en-US", { maximumFractionDigits: 0 }) : v.toFixed(2));
 
   return (
@@ -59,8 +82,8 @@ export function MarketChartCard() {
 
         <div className="mt-6 flex items-center justify-between">
           <div className="flex items-end gap-4">
-            <span className="text-[34px] font-bold leading-none text-pb-text">{meta.value}</span>
-            <span className={cn("pb-1 text-[16px] font-medium", down ? "text-pb-down" : "text-pb-up")}>{meta.change}</span>
+            <span className="text-[34px] font-bold leading-none text-pb-text">{quote ? fmtNumber(quote.price) : "—"}</span>
+            <span className={cn("pb-1 text-[16px] font-medium", down ? "text-pb-down" : "text-pb-up")}>{quote ? `${quote.change >= 0 ? "+" : "−"}${fmtNumber(Math.abs(quote.change))} (${fmtPct(quote.percentChange)})` : ""}</span>
           </div>
           <div className="flex items-center gap-1 rounded-[6px] bg-[#1B2227] p-1">
             {rangeTabs.map((r) => (
@@ -80,6 +103,13 @@ export function MarketChartCard() {
         </div>
 
         <div className={cn("mt-5 w-full", full ? "h-[70vh]" : "h-[290px]")}>
+          {chart.isLoading ? (
+            <PanelLoading rows={5} />
+          ) : chart.isError ? (
+            <PanelError onRetry={() => chart.refetch()} />
+          ) : data.length === 0 ? (
+            <PanelEmpty />
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 8, right: 70, left: 0, bottom: 0 }}>
               <defs>
@@ -89,7 +119,7 @@ export function MarketChartCard() {
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="label" ticks={ticks} tickLine={false} axisLine={false} tick={{ fill: "#A2ABA8", fontSize: 11 }} interval={0} />
+              <XAxis dataKey="datetime" ticks={ticks} tickFormatter={(v: string) => tickLabel(v, range)} tickLine={false} axisLine={false} tick={{ fill: "#A2ABA8", fontSize: 11 }} interval={0} />
               <YAxis
                 orientation="left"
                 domain={[lo - pad, hi + pad]}
@@ -103,17 +133,21 @@ export function MarketChartCard() {
               <Tooltip
                 contentStyle={{ background: "#0B0E0F", border: "1px solid #1B2227", borderRadius: 6, color: "#F1F4F3", fontSize: 12 }}
                 labelStyle={{ color: "#A2ABA8" }}
+                labelFormatter={(v: string) => tickLabel(v, range)}
                 formatter={(v: number) => [fmt(v), index]}
               />
-              <ReferenceLine
-                y={meta.prevClose}
-                stroke="#A2ABA8"
-                strokeDasharray="4 4"
-                label={{ value: `Prev Close ${meta.prevClose}`, position: "right", fill: "#A2ABA8", fontSize: 10 }}
-              />
+              {prevClose > 0 && (
+                <ReferenceLine
+                  y={prevClose}
+                  stroke="#A2ABA8"
+                  strokeDasharray="4 4"
+                  label={{ value: `Prev Close ${fmtNumber(prevClose)}`, position: "right", fill: "#A2ABA8", fontSize: 10 }}
+                />
+              )}
               <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill="url(#mdFill)" dot={false} activeDot={{ r: 4, fill: "#121719", stroke: color }} />
             </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>
