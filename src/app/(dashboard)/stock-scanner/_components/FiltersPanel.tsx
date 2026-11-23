@@ -1,27 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChipGroup } from "./ChipGroup";
 import { StopDistanceSlider } from "./StopDistanceSlider";
-import { ENTRY_GROUP, EXIT_GROUP, FILTER_GROUPS, RISK_REWARD_OPTIONS, type FilterGroup } from "./data";
+import { ENTRY_GROUP, EXIT_GROUP, FILTER_GROUPS, RISK_REWARD_OPTIONS, type FilterGroup, type FilterState } from "./data";
 
 const divider = <div className="h-px w-full bg-[#1b2227]" />;
 
-const initialState = (groups: FilterGroup[]) =>
-  Object.fromEntries(groups.map((g) => [g.key, g.selected])) as Record<string, string[]>;
+type Props = { value: FilterState; onChange: (v: FilterState) => void; onApply: () => void };
 
-export function FiltersPanel() {
+export function FiltersPanel({ value, onChange, onApply }: Props) {
   const upper = FILTER_GROUPS;
   const lower = [ENTRY_GROUP, EXIT_GROUP];
-  const [sel, setSel] = useState<Record<string, string[]>>(() => initialState([...upper, ...lower]));
-  const [stop, setStop] = useState(6);
-  const [rr, setRr] = useState("1 : 1.80");
-  const [applied, setApplied] = useState(false);
+  const { sel, stop, rr } = value;
 
   const count = useMemo(() => Object.values(sel).reduce((n, v) => n + v.length, 0) + 1, [sel]);
+
+  const setSel = (fn: (s: Record<string, string[]>) => Record<string, string[]>) => onChange({ ...value, sel: fn(sel) });
+  const setStop = (n: number) => onChange({ ...value, stop: n });
+  const setRr = (r: string) => onChange({ ...value, rr: r });
 
   const toggle = (key: string, option: string) =>
     setSel((s) => ({
@@ -29,11 +29,12 @@ export function FiltersPanel() {
       [key]: s[key].includes(option) ? s[key].filter((o) => o !== option) : [...s[key], option],
     }));
   const clear = (key: string) => setSel((s) => ({ ...s, [key]: [] }));
-  const reset = () => {
-    setSel(Object.fromEntries([...upper, ...lower].map((g) => [g.key, []])));
-    setStop(6);
-    setRr("1 : 1.80");
-  };
+  const reset = () =>
+    onChange({
+      sel: Object.fromEntries([...upper, ...lower].map((g) => [g.key, [] as string[]])),
+      stop: 6,
+      rr: "1 : 1.80",
+    });
 
   const renderGroup = (g: FilterGroup) => (
     <div key={g.key} className="flex flex-col gap-4">
@@ -84,12 +85,11 @@ export function FiltersPanel() {
 
       <Button
         variant="gold"
-        onClick={() => setApplied(true)}
+        onClick={onApply}
         className="mt-2 h-[51px] w-full rounded-[4px] text-[16px] font-medium"
       >
         Apply {count} filter
       </Button>
-      {applied && <p className="sr-only" role="status">Filters applied</p>}
     </aside>
   );
 }

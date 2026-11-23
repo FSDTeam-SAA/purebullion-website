@@ -1,7 +1,20 @@
 import { LineChart } from "lucide-react";
-import { featuredSignal as s } from "./data";
+import type { AlertDto } from "@/services/alerts.service";
+import { fmtPrice } from "@/lib/format";
 
-export function FeaturedSignal() {
+export function FeaturedSignal({ alert }: { alert: AlertDto }) {
+  const d = alert.data ?? {};
+  const s = {
+    label: "NEW SIGNAL",
+    time: alert.timeAgo,
+    company: alert.title,
+    metrics: [
+      { label: "ENTRY", value: fmtPrice(d.entryPrice), color: "text-pb-text" },
+      { label: "TARGET", value: fmtPrice(d.targetPrice), color: "text-pb-up" },
+      { label: "STOP LOSS", value: fmtPrice(d.stopLoss), color: "text-[#d94f59]" },
+    ],
+    chips: [d.action, d.status, d.symbol ? `${d.symbol} analysis` : undefined].filter(Boolean) as string[],
+  };
   return (
     <div className="border-b border-pb-head bg-[#293033] p-6">
       <div className="flex items-start gap-[14px]">

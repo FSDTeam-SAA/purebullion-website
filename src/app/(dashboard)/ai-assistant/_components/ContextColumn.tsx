@@ -11,7 +11,7 @@ function Card({ title, children, className = "" }: { title: string; children: Re
 
 export function ContextColumn() {
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-6 lg:w-[407px]">
+    <aside className="pb-scroll flex w-full shrink-0 flex-col gap-6 lg:min-h-0 lg:w-[407px] lg:overflow-y-auto">
       <Card title="In This Conversation">
         <div className="flex flex-col gap-1 p-4">
           {conversationQuotes.map((q) => (

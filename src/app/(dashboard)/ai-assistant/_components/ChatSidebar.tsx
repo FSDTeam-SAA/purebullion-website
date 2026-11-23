@@ -33,7 +33,7 @@ function ChatRow({ item, active, onSelect }: { item: ChatItem; active: boolean; 
 
 export function ChatSidebar({ activeId, onSelect, onNewChat }: Props) {
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-4 rounded-lg bg-pb-head p-4 lg:w-[364px]">
+    <aside className="pb-scroll flex w-full shrink-0 flex-col gap-4 rounded-lg bg-pb-head p-4 lg:min-h-0 lg:w-[364px] lg:overflow-y-auto">
       <button
         type="button"
         onClick={onNewChat}

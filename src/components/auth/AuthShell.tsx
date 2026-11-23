@@ -1,3 +1,6 @@
+"use client";
+
+import { useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -11,18 +14,43 @@ interface AuthShellProps {
 
 /** Full-screen gold-chart background with the frosted glass card in the middle. */
 export default function AuthShell({ title, description, children, compact }: AuthShellProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  // Keep the original card design, but scale it down uniformly when the viewport is
+  // shorter than the card so the page never needs to scroll.
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = cardRef.current;
+      if (!el) return;
+      const h = el.offsetHeight;
+      const avail = window.innerHeight - 24;
+      setScale(h > avail ? Math.max(avail / h, 0.5) : 1);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    const ro = new ResizeObserver(fit);
+    if (cardRef.current) ro.observe(cardRef.current);
+    return () => {
+      window.removeEventListener("resize", fit);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-4 py-10">
+    <div className="relative flex h-screen items-center justify-center overflow-hidden bg-black px-4">
       <Image
         src="/images/auth/auth-bg.png"
         alt=""
         fill
         priority
         sizes="100vw"
-        className="object-cover object-[70%_center]"
+        className="fixed object-cover object-[70%_center]"
       />
 
       <div
+        ref={cardRef}
+        style={{ transform: `scale(${scale})` }}
         className={cn(
           "relative flex w-full max-w-[552px] flex-col rounded-xl border border-white/10 bg-white/10 p-6 backdrop-blur-[10px] sm:p-10",
           compact ? "gap-6" : "gap-8",

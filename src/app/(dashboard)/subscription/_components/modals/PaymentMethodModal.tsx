@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormModal } from "../../../_components/shared/FormModal";
+import { toast } from "sonner";
 import { btn, btnLight } from "../btn";
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void };
@@ -23,7 +24,14 @@ export function PaymentMethodModal({ open, onOpenChange }: Props) {
           <Button variant="light" className={btnLight} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="gold" className={btn} onClick={() => onOpenChange(false)}>
+          <Button
+            variant="gold"
+            className={btn}
+            onClick={() => {
+              toast.info("Card updates are handled by our payment provider and aren't available yet.");
+              onOpenChange(false);
+            }}
+          >
             Save Card
           </Button>
         </>
@@ -31,11 +39,8 @@ export function PaymentMethodModal({ open, onOpenChange }: Props) {
     >
       <div className="text-[12px] font-bold leading-[1.2] text-[#8a9499]">
         <p>
-          Your Professional plan stays active until October 19, 2026. After that you lose signals, the scanner and alerts. Watchlists and
-          community history are kept for 90 days.
-        </p>
-        <p className="mt-3">
-          Your founding rate is released when the subscription ends and cannot be reclaimed once the 1,000 spots are filled.
+          Card details are stored securely by our payment provider. Online card updates are not enabled yet; billing currently runs on the
+          payment method used at checkout.
         </p>
       </div>
       <div className="flex flex-col gap-2">
@@ -44,7 +49,7 @@ export function PaymentMethodModal({ open, onOpenChange }: Props) {
         </label>
         <div className="relative">
           <Image src="/icons/subscription/card.svg" alt="" width={20} height={20} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
-          <Input id="card-number" defaultValue="4242 4242 4242 4242" inputMode="numeric" className={`${field} pl-10`} />
+          <Input id="card-number" placeholder="4242 4242 4242 4242" inputMode="numeric" className={`${field} pl-10`} />
         </div>
       </div>
       <div className="flex gap-4">
