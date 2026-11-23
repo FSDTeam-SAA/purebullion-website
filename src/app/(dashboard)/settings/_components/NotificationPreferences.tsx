@@ -1,29 +1,39 @@
 "use client";
 
-import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import { PanelError, PanelLoading } from "../../_components/shared/QueryState";
+import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/useProfile";
 import { SettingsCard } from "./SettingsCard";
 import { notifications } from "./data";
 
 export function NotificationPreferences() {
-  const [state, setState] = useState<Record<string, boolean>>(() => Object.fromEntries(notifications.map((n) => [n.id, n.on])));
+  const q = useNotificationPreferences();
+  const update = useUpdateNotificationPreferences();
+  const toggles = (q.data?.toggles ?? {}) as Record<string, boolean>;
+
   return (
     <SettingsCard title="Notification preferences" subtitle="The same controls appear on the Alerts screen.">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {notifications.map((n) => (
-          <div key={n.id} className="flex items-center justify-between rounded-lg bg-[#293033] p-4">
-            <label htmlFor={n.id} className="text-[18px] font-semibold leading-[1.2] text-pb-text">
-              {n.label}
-            </label>
-            <Switch
-              id={n.id}
-              checked={state[n.id]}
-              onCheckedChange={(v) => setState((s) => ({ ...s, [n.id]: v }))}
-              className="h-8 w-14 border border-pb-gold-dark bg-[#101415] shadow-none data-[state=checked]:bg-[linear-gradient(90deg,#4a4f4a_0%,#8a7430_100%)] data-[state=unchecked]:bg-[#101415] [&>span]:ml-[3px] [&>span]:size-6 [&>span]:bg-gold-gradient [&>span]:shadow-none data-[state=checked]:[&>span]:translate-x-6"
-            />
-          </div>
-        ))}
-      </div>
+      {q.isLoading ? (
+        <PanelLoading rows={4} />
+      ) : q.isError ? (
+        <PanelError message={q.error?.message} onRetry={() => q.refetch()} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {notifications.map((n) => (
+            <div key={n.id} className="flex items-center justify-between rounded-lg bg-[#293033] p-4">
+              <label htmlFor={n.id} className="text-[18px] font-semibold leading-[1.2] text-pb-text">
+                {n.label}
+              </label>
+              <Switch
+                id={n.id}
+                checked={!!toggles[n.id]}
+                onCheckedChange={(v) => update.mutate({ toggles: { [n.id]: v } as never })}
+                className="h-8 w-14 border border-pb-gold-dark bg-[#101415] shadow-none data-[state=checked]:bg-[linear-gradient(90deg,#4a4f4a_0%,#8a7430_100%)] data-[state=unchecked]:bg-[#101415] [&>span]:ml-[3px] [&>span]:size-6 [&>span]:bg-gold-gradient [&>span]:shadow-none data-[state=checked]:[&>span]:translate-x-6"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </SettingsCard>
   );
 }

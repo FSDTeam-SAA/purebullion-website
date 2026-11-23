@@ -11,19 +11,21 @@ interface AuthFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 /** Gold-outlined input (Figma "Input Field"). Password type gets the eye toggle. */
 const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
-  ({ label, error, id, type = "text", className, ...props }, ref) => {
+  ({ label, error, id, type = "text", className, placeholder, ...props }, ref) => {
     const [visible, setVisible] = useState(false);
     const isPassword = type === "password";
+    // '*' glyphs sit high in the line box; bullets are optically centred.
+    const shownPlaceholder = isPassword && placeholder ? placeholder.replace(/\*/g, "•") : placeholder;
     const inputId = id ?? label.toLowerCase().replace(/\s+/g, "-");
 
     return (
-      <div className="flex w-full flex-col justify-center gap-3">
+      <div className="auth-field flex w-full flex-col justify-center gap-3">
         <label htmlFor={inputId} className="text-base leading-normal text-white">
           {label}
         </label>
         <div
           className={cn(
-            "flex h-12 items-center gap-2 rounded-lg border bg-transparent px-3 py-2 transition-colors focus-within:border-pb-gold",
+            "auth-field-box flex h-12 items-center gap-2 rounded-lg border bg-transparent px-3 py-2 transition-colors focus-within:border-pb-gold",
             error ? "border-red-500" : "border-pb-bronze-dark",
           )}
         >
@@ -32,9 +34,10 @@ const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
             id={inputId}
             type={isPassword && visible ? "text" : type}
             className={cn(
-              "min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-[#c8c8c8]",
+              "h-full min-w-0 flex-1 bg-transparent text-base leading-none text-white outline-none placeholder:leading-none placeholder:text-[#c8c8c8]",
               className,
             )}
+            placeholder={shownPlaceholder}
             aria-invalid={!!error}
             {...props}
           />

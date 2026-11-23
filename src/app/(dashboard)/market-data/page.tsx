@@ -5,7 +5,6 @@ import { SectorBreadthCard } from "./_components/SectorBreadthCard";
 import { MoversTable } from "./_components/MoversTable";
 import { UpcomingEarnings } from "./_components/UpcomingEarnings";
 import { MarketNews } from "./_components/MarketNews";
-import { topGainers, topLosers, mostActive } from "./_components/data";
 
 export default function MarketDataPage() {
   return (
@@ -19,9 +18,9 @@ export default function MarketDataPage() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <MoversTable title="Top Gainers" rows={topGainers} />
-        <MoversTable title="Top Losers" rows={topLosers} />
-        <MoversTable title="Most Active" rows={mostActive} />
+        <MoversTable title="Top Gainers" kind="gainers" />
+        <MoversTable title="Top Losers" kind="losers" />
+        <MoversTable title="Most Active" kind="most-active" />
       </div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[794px_minmax(0,1fr)]">
         <UpcomingEarnings />

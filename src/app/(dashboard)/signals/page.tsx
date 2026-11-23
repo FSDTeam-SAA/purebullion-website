@@ -4,10 +4,12 @@ import { SignalsTabs } from "./_components/SignalsTabs";
 import { SignalsFilterBar } from "./_components/SignalsFilterBar";
 import { OpenSignalCards } from "./_components/OpenSignalCards";
 import { AllSignalsTable } from "./_components/AllSignalsTable";
+import { SignalsFilterProvider } from "./_components/SignalsFilterContext";
 import { SignalsDisclaimer } from "./_components/SignalsDisclaimer";
 
 export default function SignalsPage() {
   return (
+    <SignalsFilterProvider>
     <div className="flex min-h-full flex-col">
       <SignalsHeaderBar />
       <SignalsFilterChips />
@@ -19,5 +21,6 @@ export default function SignalsPage() {
         <SignalsDisclaimer />
       </div>
     </div>
+    </SignalsFilterProvider>
   );
 }

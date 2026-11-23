@@ -4,41 +4,42 @@ import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { POST_TOPICS, type Post } from "../data";
+import { POST_TOPICS } from "../data";
 import { ModalShell } from "./ModalShell";
 
 type Props = {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  onPublish: (p: Pick<Post, "title" | "body" | "category"> & { image?: string }) => void;
+  onPublish: (p: { title: string; body: string; category: (typeof POST_TOPICS)[number]; file?: File }) => void;
+  publishing?: boolean;
 };
 
 const label = "text-[16px] font-normal leading-normal text-white";
 const field = "rounded-lg border-white/10 bg-transparent px-3 text-[16px] text-[#c8c8c8] placeholder:text-[#c8c8c8] focus-visible:ring-1 focus-visible:ring-pb-gold/60";
 
-export function NewPostModal({ open, onOpenChange, onPublish }: Props) {
+export function NewPostModal({ open, onOpenChange, onPublish, publishing }: Props) {
   const [topic, setTopic] = useState<(typeof POST_TOPICS)[number]>("Signals");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [image, setImage] = useState<string | undefined>();
+  const [file, setFile] = useState<File | undefined>();
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
-    setTopic("Signals"); setTitle(""); setBody(""); setImage(undefined); setFileName("");
+    setTopic("Signals"); setTitle(""); setBody(""); setFile(undefined); setFileName("");
   };
   const handleOpen = (o: boolean) => {
     if (!o) reset();
     onOpenChange(o);
   };
   const publish = () => {
-    onPublish({ category: topic, title: title.trim(), body: body.trim(), image });
+    onPublish({ category: topic, title: title.trim(), body: body.trim(), file });
     handleOpen(false);
   };
   const onFile = (f?: File) => {
     if (!f) return;
     setFileName(f.name);
-    setImage(URL.createObjectURL(f));
+    setFile(f);
   };
 
   return (
@@ -48,7 +49,7 @@ export function NewPostModal({ open, onOpenChange, onPublish }: Props) {
       title="New Post"
       confirmLabel="Publish post"
       onConfirm={publish}
-      confirmDisabled={!title.trim() || !body.trim()}
+      confirmDisabled={!title.trim() || !body.trim() || publishing}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col justify-center gap-3">

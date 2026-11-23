@@ -1,12 +1,14 @@
 import { PanelCard } from "../../../_components/shared";
-import { timeline } from "./data";
+import type { SignalDetail } from "@/services/signals.service";
+import { fmtDate } from "@/lib/format";
 
-export function SignalTimeline() {
+export function SignalTimeline({ d }: { d: SignalDetail }) {
+  const timeline = d.timeline ?? [];
   return (
     <PanelCard title="Signal Timeline" icon bordered={false} className="rounded-[8px]">
       <ol className="flex flex-col gap-3 bg-pb-surface/40 p-4 pb-6">
-        {timeline.map(([title, desc], i) => (
-          <li key={title} className="relative flex gap-2">
+        {timeline.map(({ stage: title, description: desc, date }, i) => (
+          <li key={`${title}-${i}`} className="relative flex gap-2">
             <span className="relative z-10 mt-0 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-pb-gold bg-pb-base">
               <span className="size-2 rounded-full bg-pb-gold" />
             </span>
@@ -14,7 +16,7 @@ export function SignalTimeline() {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-[16px] text-pb-text">{title}</span>
-                <span className="text-[12px] text-pb-muted">Aug 14, 2026</span>
+                <span className="text-[12px] text-pb-muted">{fmtDate(date)}</span>
               </div>
               <p className="mt-2 text-[12px] text-pb-muted">{desc}</p>
             </div>

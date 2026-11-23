@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${raleway.variable} font-raleway antialiased`}>
-        <NextTopLoader color="#0070f3" height={3} showSpinner={false} />
+        <NextTopLoader color="#E7C042" shadow="0 0 10px #E7C042,0 0 5px #A48226" height={3} showSpinner={false} />
         <AppProvider>
           <AuthProvider>
             <div className="">{children}</div>
