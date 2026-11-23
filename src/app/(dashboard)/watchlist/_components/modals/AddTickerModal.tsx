@@ -1,25 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PbModal } from "../../../_components/shared";
 import { cn } from "@/lib/utils";
-import type { Suggestion } from "../data";
+import { useUniverseSearch, useWatchlistSuggestions } from "@/hooks/useWatchlist";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  suggestions: Suggestion[];
-  onAdd: (s: Suggestion) => void;
+  watched: Set<string>;
+  adding?: string;
+  onAdd: (symbol: string, companyName: string) => void;
 };
 
-export function AddTickerModal({ open, onOpenChange, suggestions, onAdd }: Props) {
+type Row = { ticker: string; company: string; change: string; added: boolean };
+
+export function AddTickerModal({ open, onOpenChange, watched, adding, onAdd }: Props) {
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
-  const list = q
-    ? suggestions.filter((s) => s.ticker.toLowerCase().includes(q) || s.company.toLowerCase().includes(q))
-    : suggestions;
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim()), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const suggestions = useWatchlistSuggestions(open);
+  const search = useUniverseSearch(debounced);
+  const searching = debounced.length > 0;
+
+  const list: Row[] = searching
+    ? (search.data ?? []).map((u) => ({ ticker: u.symbol, company: u.name, change: u.change, added: watched.has(u.symbol) }))
+    : (suggestions.data ?? []).map((s) => ({
+        ticker: s.symbol,
+        company: s.name,
+        change: s.change,
+        added: s.isAdded || watched.has(s.symbol),
+      }));
+  const loading = searching ? search.isFetching : suggestions.isLoading;
 
   return (
     <PbModal
@@ -51,7 +69,7 @@ export function AddTickerModal({ open, onOpenChange, suggestions, onAdd }: Props
       </div>
 
       <p className="mb-3 mt-6 text-[11px] font-semibold uppercase tracking-wide text-pb-muted">
-        Suggested from your scanner matches
+        {searching ? "Search results" : "Suggested from your scanner matches"}
       </p>
       <ul className="flex flex-col gap-[10px]">
         {list.map((s) => {
@@ -69,16 +87,18 @@ export function AddTickerModal({ open, onOpenChange, suggestions, onAdd }: Props
                 <span className={cn("text-[14px]", up ? "text-pb-up" : "text-pb-down")}>{s.change}</span>
                 <button
                   type="button"
-                  onClick={() => onAdd(s)}
-                  className="h-[34px] rounded-[4px] border border-[#293033] bg-[#050606] px-4 text-[14px] font-bold text-white hover:border-pb-gold-dark"
+                  disabled={s.added || adding === s.ticker}
+                  onClick={() => onAdd(s.ticker, s.company)}
+                  className="h-[34px] rounded-[4px] border border-[#293033] bg-[#050606] px-4 text-[14px] font-bold text-white hover:border-pb-gold-dark disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Add
+                  {s.added ? "Added" : adding === s.ticker ? "Adding…" : "Add"}
                 </button>
               </div>
             </li>
           );
         })}
-        {list.length === 0 && <li className="py-4 text-center text-[14px] text-pb-muted">No matches.</li>}
+        {loading && <li className="py-4 text-center text-[14px] text-pb-muted">Loading…</li>}
+        {!loading && list.length === 0 && <li className="py-4 text-center text-[14px] text-pb-muted">No matches.</li>}
       </ul>
     </PbModal>
   );

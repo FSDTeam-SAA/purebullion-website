@@ -1,10 +1,26 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { briefing } from "./data";
+import { useDashboardOverview } from "@/hooks/useDashboard";
 
 export function DailyBriefing() {
+  const { data } = useDashboardOverview();
+  const b = data?.dailyBriefing;
+  const briefing = {
+    updated: b?.updated ?? "Loading…",
+    title: b?.headline ?? "",
+    body: b?.body ?? "",
+    chips: b
+      ? ([
+          { label: "Breadth", value: b.breadth, tone: "green" },
+          { label: "Sector leader", value: b.sectorLeader, tone: "green" },
+          { label: "Laggard", value: b.laggard, tone: "red" },
+        ] as const)
+      : ([] as const),
+  };
   return (
     <section className="relative flex min-h-[352px] min-w-0 flex-col overflow-hidden border border-[#cbd5e1]">
       <Image src="/images/dashboard/briefing-bg.png" alt="" fill sizes="800px" className="object-cover object-bottom" />

@@ -6,3 +6,5 @@ export { StatTile } from "./StatTile";
 export { TablePagination } from "./TablePagination";
 export { PbModal } from "./PbModal";
 export { SummaryTile } from "./SummaryTile";
+export { PanelLoading, PanelError, PanelEmpty } from "./QueryState";
+export { UserAvatar, getInitials } from "./UserAvatar";

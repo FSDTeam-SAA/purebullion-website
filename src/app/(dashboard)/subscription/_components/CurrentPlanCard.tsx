@@ -2,7 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { btn, btnLight } from "./btn";
-import { currentPlan } from "./data";
+import { PanelEmpty, PanelError, PanelLoading } from "../../_components/shared/QueryState";
+import { useMySubscription, usePlans } from "@/hooks/useSubscription";
+import { fmtDate } from "@/lib/format";
+import { activeSub, money, sortPlans } from "./plan-utils";
 import { useSubscriptionModals } from "./SubscriptionModals";
 
 const tagTone = {
@@ -12,6 +15,39 @@ const tagTone = {
 
 export function CurrentPlanCard() {
   const { open } = useSubscriptionModals();
+  const my = useMySubscription();
+  const plans = usePlans();
+
+  const shell = (children: React.ReactNode) => (
+    <section className="overflow-hidden rounded-lg border border-pb-gold-dark bg-[#171d1f]">{children}</section>
+  );
+  if (my.isLoading) return shell(<PanelLoading rows={3} />);
+  if (my.isError) return shell(<PanelError message={my.error?.message} onRetry={() => my.refetch()} />);
+
+  const sub = activeSub(my.data);
+  if (!sub) {
+    return shell(<PanelEmpty>You don&apos;t have an active subscription. Choose a plan below to get started.</PanelEmpty>);
+  }
+
+  const sorted = sortPlans(plans.data);
+  const idx = sorted.findIndex((p) => p._id === sub.plan._id);
+  const higher = idx >= 0 ? sorted[idx + 1] : undefined;
+  const lower = idx > 0 ? sorted[idx - 1] : undefined;
+  const cycle = sub.billingCycle;
+  const currentPlan = {
+    name: sub.plan.name,
+    tags: [{ label: sub.status, tone: "green" as const }],
+    description: sub.plan.description,
+    price: money(sub.amount),
+    priceNote: cycle === "yearly" ? "per year" : "per month",
+    meta: [
+      { label: "Billing cycle", value: cycle === "yearly" ? "Yearly" : "Monthly" },
+      { label: "Status", value: sub.status.charAt(0) + sub.status.slice(1).toLowerCase() },
+      { label: "Next billing date", value: fmtDate(sub.renewalDate) },
+      { label: "Payment method", value: (sub.paymentMethod || "card").replace(/^./, (c) => c.toUpperCase()) },
+    ],
+  };
+
   return (
     <section className="overflow-hidden rounded-lg border border-pb-gold-dark bg-[#171d1f]">
       <div className="flex items-center justify-between gap-4 border-b-2 border-[#293033] p-4">
@@ -43,12 +79,16 @@ export function CurrentPlanCard() {
           ))}
         </dl>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Button variant="gold" className={btn} onClick={() => open("upgrade")}>
-            Upgrade to Institutional
-          </Button>
-          <Button variant="light" className={btnLight} onClick={() => open("downgrade")}>
-            Downgrade to Essential
-          </Button>
+          {higher && (
+            <Button variant="gold" className={btn} onClick={() => open("upgrade", { plan: higher, cycle })}>
+              Upgrade to {higher.name}
+            </Button>
+          )}
+          {lower && (
+            <Button variant="light" className={btnLight} onClick={() => open("downgrade", { plan: lower, cycle })}>
+              Downgrade to {lower.name}
+            </Button>
+          )}
           <Button variant="light" className={btnLight} onClick={() => open("payment")}>
             Update payment method
           </Button>

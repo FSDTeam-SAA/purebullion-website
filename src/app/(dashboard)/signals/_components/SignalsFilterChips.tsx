@@ -1,29 +1,33 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ASSET_OPTIONS, SIDE_OPTIONS, useSignalsFilters } from "./SignalsFilterContext";
 
-const CHIPS = ["ALL", "BUY", "SELL", "ALL TYPES", "STOCK", "EFT"];
+const LABEL: Record<string, string> = { all: "ALL", "All types": "ALL TYPES", ETF: "EFT" };
+const up = (l: string) => LABEL[l] ?? l.toUpperCase();
 
 export function SignalsFilterChips() {
-  const [on, setOn] = useState<string[]>(["ALL", "ALL TYPES"]);
-  const toggle = (c: string) => setOn((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
+  const { side, setSide, asset, setAsset } = useSignalsFilters();
+  const chips = [
+    ...SIDE_OPTIONS.map((o) => ({ label: o.label === "All" ? "ALL" : o.label, on: side === o.value, click: () => setSide(o.value) })),
+    ...ASSET_OPTIONS.map((o) => ({ label: up(o.label), on: asset === o.value, click: () => setAsset(o.value) })),
+  ];
   return (
     <div className="flex h-[60px] items-center justify-between bg-pb-surface px-6">
       <div className="flex items-center gap-2">
         <span className="mr-1 text-[14px] text-pb-muted">Filters :</span>
-        {CHIPS.map((c) => (
+        {chips.map((c) => (
           <button
-            key={c}
+            key={c.label}
             type="button"
-            onClick={() => toggle(c)}
+            onClick={c.click}
             className={cn(
               "h-6 rounded-[2px] border px-2 text-[12px] text-pb-text",
-              on.includes(c) ? "border-pb-gold-dark bg-gold-gradient-soft" : "border-[#64748b] bg-[#3a4246]"
+              c.on ? "border-pb-gold-dark bg-gold-gradient-soft" : "border-[#64748b] bg-[#3a4246]"
             )}
           >
-            {c}
+            {c.label}
           </button>
         ))}
       </div>

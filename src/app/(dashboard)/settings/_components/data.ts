@@ -1,13 +1,13 @@
-export const profile = {
-  fullName: "Jordan Reyes",
-  displayName: "Jordan R.",
-  email: "jordan@email.com",
-  timezone: "et",
-  tags: [
-    { label: "Professional", tone: "green" as const },
-    { label: "Founding member #388", tone: "gold" as const },
-  ],
+/** UI select value -> IANA zone stored on the user. */
+export const tzToIana: Record<string, string> = {
+  et: "America/New_York",
+  ct: "America/Chicago",
+  mt: "America/Denver",
+  pt: "America/Los_Angeles",
+  gmt: "GMT",
 };
+export const ianaToTz = (iana?: string) =>
+  Object.entries(tzToIana).find(([, v]) => v === iana)?.[0] ?? "et";
 
 export const timezones = [
   { value: "et", label: "Eastern Time (ET)" },
@@ -17,16 +17,17 @@ export const timezones = [
   { value: "gmt", label: "Greenwich Mean Time (GMT)" },
 ];
 
+/** Settings toggles mapped onto backend `toggles` keys. */
 export const notifications = [
-  { id: "new-signals", label: "New signals", on: true },
-  { id: "signal-closed", label: "Signal closed", on: true },
-  { id: "signal-closed-2", label: "Signal closed", on: true },
-  { id: "market-condition", label: "Market condition change", on: true },
-  { id: "watchlist-movers", label: "Watchlist movers", on: false },
-  { id: "community-replies", label: "Community replies", on: true },
-  { id: "daily-briefing", label: "Daily briefing email", on: true },
-  { id: "weekly-wrap", label: "Weekly wrap email", on: false },
-];
+  { id: "newSignals", label: "New signals" },
+  { id: "signalClosed", label: "Signal closed" },
+  { id: "signalProximity", label: "Signal proximity" },
+  { id: "marketConditionChange", label: "Market condition change" },
+  { id: "watchlistMovers", label: "Watchlist movers" },
+  { id: "communityReplies", label: "Community replies" },
+  { id: "dailyBriefingEmail", label: "Daily briefing email" },
+  { id: "weeklyWrapEmail", label: "Weekly wrap email" },
+] as const;
 
 export const passwordFields = [
   { id: "current", label: "Current password" },
